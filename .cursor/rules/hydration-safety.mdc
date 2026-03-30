@@ -1,0 +1,75 @@
+---
+description: React hydration mismatch prevention
+globs: ["**/*.tsx", "**/*.ts"]
+alwaysApply: false
+---
+
+# Hydration Mismatch Prevention
+
+## The Problem
+Hydration mismatches occur when server-rendered HTML doesn't match the client-rendered output, causing UI flickers, errors, and broken interactivity.
+
+## Common AI Mistakes
+
+### 1. Non-deterministic Values in Render
+❌ WRONG — different value on server vs client:
+```tsx
+export default function Component() {
+  const id = Math.random()  // Different on server vs client!
+  return <div id={`item-${id}`}>Content</div>
+}
+```
+
+✅ CORRECT — use useId() for unique IDs:
+```tsx
+import { useId } from 'react'
+export default function Component() {
+  const id = useId()
+  return <div id={id}>Content</div>
+}
+```
+
+### 2. Browser APIs in Server-Rendered Code
+❌ WRONG — window/document don't exist on server:
+```tsx
+export default function Component() {
+  const width = window.innerWidth  // ReferenceError on server!
+  return <div>{width}</div>
+}
+```
+
+✅ CORRECT — guard with useEffect:
+```tsx
+'use client'
+import { useState, useEffect } from 'react'
+export default function Component() {
+  const [width, setWidth] = useState(0)
+  useEffect(() => { setWidth(window.innerWidth) }, [])
+  return <div>{width}</div>
+}
+```
+
+### 3. Date/Time Rendering
+❌ WRONG — different timezone on server vs client:
+```tsx
+export default function Component() {
+  return <p>{new Date().toLocaleString()}</p>  // Hydration mismatch!
+}
+```
+
+✅ CORRECT — render dates client-side or use consistent formatting:
+```tsx
+'use client'
+import { useState, useEffect } from 'react'
+export default function DateDisplay({ date }: { date: string }) {
+  const [formatted, setFormatted] = useState(date)
+  useEffect(() => { setFormatted(new Date(date).toLocaleString()) }, [date])
+  return <p>{formatted}</p>
+}
+```
+
+## Rule
+- NEVER use Math.random(), crypto.randomUUID(), or Date.now() directly in render
+- NEVER access window, document, localStorage, or navigator without checking typeof window !== 'undefined'
+- Use React.useId() for dynamically generated IDs
+- Wrap browser-only logic in useEffect
