@@ -1,0 +1,107 @@
+{
+  "name": "GitHub Star → Welcome Email → Newsletter Signup",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "github-star-webhook",
+        "responseMode": "onReceived",
+        "responseData": "allEntries"
+      },
+      "id": "a1b2c3d4-1111-4000-8000-000000000001",
+      "name": "GitHub Star Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.action }}",
+              "operation": "equals",
+              "value2": "started"
+            }
+          ]
+        }
+      },
+      "id": "a1b2c3d4-2222-4000-8000-000000000002",
+      "name": "Filter Stars Only",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_GOOGLE_SHEET_ID"
+        },
+        "sheetName": "Leads",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "username": "={{ $json.body.sender.login }}",
+            "email": "={{ $json.body.sender.email }}",
+            "avatar": "={{ $json.body.sender.avatar_url }}",
+            "starred_at": "={{ $now.toISO() }}",
+            "repo": "={{ $json.body.repository.full_name }}"
+          }
+        }
+      },
+      "id": "a1b2c3d4-3333-4000-8000-000000000003",
+      "name": "Save to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [600, 200]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.body.sender.email }}",
+        "subject": "Thanks for starring {{ $json.body.repository.name }}! 🚀",
+        "emailType": "html",
+        "message": "<div style=\"font-family: Inter, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;\"><h1 style=\"font-size: 24px; font-weight: 700; color: #fafafa;\">Hey {{ $json.body.sender.login }}!</h1><p style=\"color: #a1a1aa; line-height: 1.6; margin-top: 16px;\">Thanks for starring <strong>{{ $json.body.repository.name }}</strong>. I noticed you're interested in AI-assisted development.</p><p style=\"color: #a1a1aa; line-height: 1.6;\">I put together a complete system for building production apps with Cursor — 17 architecture rules, MCP integrations, and a full boilerplate.</p><a href=\"https://vibestackdev.gumroad.com/l/vibe-stack\" style=\"display: inline-block; margin-top: 24px; padding: 12px 24px; background: linear-gradient(135deg, #7c3aed, #6d28d9); color: white; border-radius: 8px; font-weight: 600; text-decoration: none;\">Check out the Complete System →</a><p style=\"color: #71717a; font-size: 12px; margin-top: 32px;\">Sent with ❤️ from the Vibe Stack team</p></div>"
+      },
+      "id": "a1b2c3d4-4444-4000-8000-000000000004",
+      "name": "Send Welcome Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [600, 400]
+    }
+  ],
+  "connections": {
+    "GitHub Star Webhook": {
+      "main": [
+        [
+          {
+            "node": "Filter Stars Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Stars Only": {
+      "main": [
+        [
+          {
+            "node": "Save to Google Sheets",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Welcome Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

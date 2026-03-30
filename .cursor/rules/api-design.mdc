@@ -1,0 +1,42 @@
+---
+description: API route handler design patterns
+globs: ["**/app/api/**", "**/route.ts"]
+---
+
+# API Design Patterns
+
+Standard response format for Route Handlers:
+Success: `{ data: T, error: null }`
+Error:   `{ data: null, error: { code: string, message: string } }`
+
+HTTP status codes:
+- 200: Success (GET, PATCH)
+- 201: Created (POST)
+- 204: No content (DELETE)
+- 400: Validation error
+- 401: Unauthenticated
+- 403: Unauthorized  
+- 404: Not found
+- 500: Server error
+
+Route handler template:
+```typescript
+import { NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
+
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const supabase = createServerClient(...)
+  
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return NextResponse.json(
+      { data: null, error: { code: 'UNAUTHORIZED', message: 'Login required' } }, 
+      { status: 401 }
+    )
+  }
+  
+  // ... fetch data
+  return NextResponse.json({ data: { id, status: 'ok' }, error: null })
+}
+```

@@ -1,0 +1,55 @@
+---
+description: Critical Next.js 15 breaking changes regarding async params and searchParams
+globs: ["**/app/**/page.tsx", "**/app/**/layout.tsx", "**/app/**/route.ts"]
+alwaysApply: false
+---
+
+# Next.js 15 Async Params (BREAKING CHANGE)
+
+CRITICAL: In Next.js 15+, `params` and `searchParams` are ASYNC Promises.
+This is a breaking change from Next.js 14. The AI MUST await them.
+
+## Rule: Always Use Promise Types
+
+✅ CORRECT (Next.js 15):
+```tsx
+type PageProps = { 
+  params: Promise<{ slug: string }> 
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }> 
+}
+
+export default async function Page({ params, searchParams }: PageProps) {
+  const { slug } = await params;
+  const search = await searchParams;
+}
+```
+
+❌ WRONG (outdated Next.js 14 pattern — will crash silently):
+```tsx
+// DO NOT GENERATE THIS PATTERN
+export default function Page({ params }: { params: { slug: string } }) {
+  const { slug } = params; // BREAKS: params is a Promise in Next.js 15
+}
+```
+
+## Rule: generateMetadata Also Uses Async Params
+```tsx
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  return { title: `Post: ${slug}` }
+}
+```
+
+## Rule: Layout Components MUST Await Params
+```tsx
+export default async function Layout({
+  children,
+  params,
+}: {
+  children: React.ReactNode
+  params: Promise<{ teamId: string }>
+}) {
+  const { teamId } = await params;
+  return <div>{children}</div>
+}
+```

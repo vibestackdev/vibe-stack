@@ -1,0 +1,68 @@
+---
+description: Next.js performance optimization — caching, bundle size, and Core Web Vitals
+globs: ["**/app/**", "**/components/**", "**/*.tsx"]
+alwaysApply: false
+---
+
+# Performance & Caching
+
+## Data Fetching Rules
+1. Use parallel fetching with `Promise.all()` when data is independent:
+```tsx
+// ✅ CORRECT: Parallel — both requests fire simultaneously
+const [user, posts] = await Promise.all([
+  getUser(userId),
+  getPosts(userId),
+])
+
+// ❌ WRONG: Sequential — second request waits for first to finish
+const user = await getUser(userId)
+const posts = await getPosts(userId)
+```
+
+2. NEVER fetch in loops (N+1 problem):
+```tsx
+// ❌ N+1: Fires 100 queries
+for (const id of userIds) {
+  const user = await supabase.from('profiles').select().eq('id', id).single()
+}
+
+// ✅ Batch: Fires 1 query
+const { data } = await supabase.from('profiles').select().in('id', userIds)
+```
+
+3. Use `unstable_cache()` for expensive server-side computations:
+```tsx
+import { unstable_cache } from 'next/cache'
+
+const getCachedPosts = unstable_cache(
+  async (userId: string) => {
+    return supabase.from('posts').select().eq('user_id', userId)
+  },
+  ['user-posts'],
+  { revalidate: 60, tags: ['posts'] }
+)
+```
+
+## Bundle Size Rules
+- Dynamic import heavy libraries: `const { Chart } = await import('chart.js')`
+- Use `next/dynamic` for client components that don't need SSR:
+```tsx
+import dynamic from 'next/dynamic'
+const RichTextEditor = dynamic(() => import('@/components/editor'), {
+  ssr: false,
+  loading: () => <div className="animate-pulse h-40 bg-muted rounded" />,
+})
+```
+- NEVER import entire icon libraries: `import { Search } from 'lucide-react'` not `import * as icons`
+
+## Image Optimization
+- ALWAYS use `next/image` with explicit `width` and `height`
+- Set `priority={true}` on above-the-fold hero images for LCP
+- Use `placeholder="blur"` with `blurDataURL` for smooth loading
+- Serve modern formats: Next.js automatically converts to WebP/AVIF
+
+## Core Web Vitals Targets
+- LCP (Largest Contentful Paint): < 2.5s
+- FID (First Input Delay): < 100ms
+- CLS (Cumulative Layout Shift): < 0.1

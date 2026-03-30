@@ -1,0 +1,72 @@
+---
+description: Strict TypeScript boundaries — no any, Zod validation, explicit return types
+globs: ["**/*.ts", "**/*.tsx"]
+alwaysApply: false
+---
+
+# Strict TypeScript & Zod
+
+## Core Rules
+- `tsconfig.json` MUST have `strict: true`
+- NEVER use `any` — use `unknown` and narrow with type guards
+- ALWAYS provide explicit return types for Server Actions and API routes
+- Prefer `interface` over `type` for public API contracts (better error messages, extendable)
+
+## The `any` Ban
+```typescript
+// ❌ NEVER
+function process(data: any) { return data.name }
+
+// ✅ Use unknown + narrowing
+function process(data: unknown): string {
+  if (typeof data === 'object' && data !== null && 'name' in data) {
+    return (data as { name: string }).name
+  }
+  throw new Error('Invalid data shape')
+}
+
+// ✅ Or better — use Zod
+const DataSchema = z.object({ name: z.string() })
+function process(data: unknown): string {
+  const parsed = DataSchema.parse(data)
+  return parsed.name
+}
+```
+
+## Zod at Every Boundary
+Validate ALL external input at these boundaries:
+1. **Server Actions** — `formData` from client
+2. **Route Handlers** — `request.json()` from external callers
+3. **Webhooks** — payload from Stripe, GitHub, etc.
+4. **URL params** — `searchParams` from user-controlled URLs
+
+```typescript
+const CreateTodoSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(200),
+  priority: z.enum(['low', 'medium', 'high']).default('medium'),
+  dueDate: z.string().datetime().optional(),
+})
+
+type CreateTodoInput = z.infer<typeof CreateTodoSchema>
+
+export async function createTodo(formData: FormData): Promise<ActionResponse> {
+  const parsed = CreateTodoSchema.safeParse({
+    title: formData.get('title'),
+    priority: formData.get('priority'),
+    dueDate: formData.get('dueDate'),
+  })
+
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0].message }
+  }
+
+  // proceed with parsed.data (fully typed as CreateTodoInput)
+}
+```
+
+## Utility Types You Should Use
+- `Partial<T>` for optional updates
+- `Pick<T, 'field1' | 'field2'>` for selecting fields
+- `Omit<T, 'id' | 'created_at'>` for create inputs
+- `Record<string, unknown>` instead of `object` or `{}`
+- `NonNullable<T>` to strip null/undefined

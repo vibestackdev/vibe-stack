@@ -1,0 +1,27 @@
+---
+description: Supabase Row Level Security enforcement
+globs: ["**/*.sql", "**/supabase/**"]
+---
+
+# Supabase Row Level Security (RLS)
+
+ALWAYS assume RLS is enabled. NEVER generate queries that assume admin access by default.
+
+RLS Policy Patterns:
+-- Own record only:
+```sql
+create policy "Users own data" on todos
+  for all using (auth.uid() = user_id);
+```
+
+-- Read-only public:
+```sql
+create policy "Public read" on posts  
+  for select using (published = true);
+```
+
+Code rules:
+- ALWAYS use anon/authenticated clients (not `service_role`) for user operations
+- Service role client: ONLY use in server-to-server operations (webhooks, cron jobs)
+- NEVER pass `service_role` key to the browser
+- Use `select('specific, columns')` not `select('*')` for performance

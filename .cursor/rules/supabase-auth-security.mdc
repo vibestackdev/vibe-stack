@@ -1,0 +1,50 @@
+---
+description: Supabase auth security — enforces getUser() over getSession() on the server
+globs: ["**/app/**", "**/actions/**", "**/api/**", "**/lib/supabase/**", "**/middleware.*"]
+alwaysApply: false
+---
+
+# Supabase Auth Security
+
+## RULE 1: NEVER Use getSession() on the Server
+
+SECURITY CRITICAL: `getSession()` reads the JWT from cookies without revalidating it.
+A malicious user can craft a fake session token that `getSession()` will silently accept.
+`getUser()` sends a request to Supabase Auth to revalidate the JWT — it is cryptographically secure.
+
+✅ SECURE (always use on the server):
+```typescript
+const { data: { user }, error } = await supabase.auth.getUser()
+if (error || !user) redirect('/login')
+```
+
+❌ INSECURE (never use in server code):
+```typescript
+// VULNERABILITY: This does NOT verify the JWT with the auth server
+const { data: { session } } = await supabase.auth.getSession()
+```
+
+## RULE 2: Always Use @supabase/ssr, Never @supabase/auth-helpers
+
+The `@supabase/auth-helpers-nextjs` package is DEPRECATED.
+Always import from `@supabase/ssr` for cookie-based sessions.
+
+❌ DEPRECATED:
+```typescript
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+```
+
+✅ CORRECT:
+```typescript
+import { createBrowserClient } from '@supabase/ssr'    // Client Components
+import { createServerClient } from '@supabase/ssr'      // Server Components
+```
+
+## RULE 3: Middleware Must Refresh Sessions
+Every protected route requires middleware that calls `updateSession()`.
+Without this, user tokens expire silently and server components see null users.
+
+## RULE 4: PKCE Flow for Email Confirmations
+When implementing email signup, create a callback route at `app/auth/confirm/route.ts` 
+that exchanges the `token_hash` using `verifyOtp()`. The PKCE flow requires the user
+to complete verification in the same browser session.

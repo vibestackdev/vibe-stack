@@ -1,0 +1,42 @@
+---
+description: Error boundaries and loading states guidelines
+globs: ["**/app/**"]
+---
+
+# Error Handling and Loading States
+
+EVERY page in `app/` router MUST have sibling files if it does data fetching:
+- `loading.tsx` (Suspense boundary)
+- `error.tsx` (Error boundary — must be `'use client'`)
+
+`loading.tsx` template:
+```tsx
+export default function Loading() {
+  return <div className="animate-pulse">Loading...</div>
+}
+```
+
+`error.tsx` template:
+```tsx
+'use client'
+export default function Error({ error, reset }: { error: Error; reset: () => void }) {
+  return (
+    <div>
+      <h2>Something went wrong</h2>
+      <button onClick={reset}>Try again</button>
+    </div>
+  )
+}
+```
+
+Server Action error pattern:
+```typescript
+export async function createItem(formData: FormData) {
+  try {
+    // ... operation
+    return { success: true }
+  } catch (error) {
+    return { error: 'Failed to create item' }
+  }
+}
+```

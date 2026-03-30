@@ -1,0 +1,86 @@
+{
+  "name": "Gumroad Sale → Notion CRM + Thank You Email",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "gumroad-sale",
+        "responseMode": "onReceived"
+      },
+      "id": "c1b2c3d4-1111-4000-8000-000000000001",
+      "name": "Gumroad Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_DATABASE_ID"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Name",
+              "title": "={{ $json.body.email }}"
+            },
+            {
+              "key": "Product",
+              "richText": "={{ $json.body.product_name }}"
+            },
+            {
+              "key": "Revenue",
+              "number": "={{ $json.body.price / 100 }}"
+            },
+            {
+              "key": "Date",
+              "date": "={{ $now.toISO() }}"
+            }
+          ]
+        }
+      },
+      "id": "c1b2c3d4-2222-4000-8000-000000000002",
+      "name": "Add to Notion CRM",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2,
+      "position": [400, 200]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.body.email }}",
+        "subject": "Your AI Builder's System is ready 🎉",
+        "emailType": "html",
+        "message": "<div style=\"font-family: Inter, sans-serif; max-width: 560px; margin: 0 auto; padding: 40px 20px;\"><h1 style=\"font-size: 24px; font-weight: 700; color: #fafafa;\">Welcome to the Builder's Club!</h1><p style=\"color: #a1a1aa; line-height: 1.6; margin-top: 16px;\">Your purchase of <strong>{{ $json.body.product_name }}</strong> is confirmed. Here's how to get started:</p><ol style=\"color: #a1a1aa; line-height: 2;\"><li>Download the files from your Gumroad library</li><li>Copy the <code>.cursor/rules/</code> folder into your project</li><li>Copy <code>.cursor/mcp.json</code> and add your API keys</li><li>Read <code>docs/ARCHITECTURE.md</code> for the full system overview</li></ol><p style=\"color: #a1a1aa; line-height: 1.6; margin-top: 16px;\">If you purchased the Complete Vault, you also have the full boilerplate — just <code>npm install</code> and you're ready.</p><a href=\"https://github.com/vibestackdev/vibe-stack\" style=\"display: inline-block; margin-top: 24px; padding: 12px 24px; background: linear-gradient(135deg, #7c3aed, #6d28d9); color: white; border-radius: 8px; font-weight: 600; text-decoration: none;\">Star the Repo on GitHub ⭐</a><p style=\"color: #71717a; font-size: 12px; margin-top: 32px;\">Reply to this email if you have any questions. I read every message.</p></div>"
+      },
+      "id": "c1b2c3d4-3333-4000-8000-000000000003",
+      "name": "Send Thank You Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2,
+      "position": [400, 400]
+    }
+  ],
+  "connections": {
+    "Gumroad Webhook": {
+      "main": [
+        [
+          {
+            "node": "Add to Notion CRM",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Thank You Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "name": "vibe-stack",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-ready Next.js 15 + Supabase boilerplate with AI-enforcing architecture rules",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.5.0",
+    "@supabase/supabase-js": "^2.45.0",
+    "next": "^15.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "lucide-react": "^0.460.0",
+    "tailwind-merge": "^2.5.0",
+    "clsx": "^2.1.0",
+    "zod": "^3.23.0",
+    "stripe": "^17.0.0",
+    "resend": "^4.0.0",
+    "sonner": "^1.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.6.0",
+    "tailwindcss": "^3.4.0",
+    "postcss": "^8.4.0",
+    "autoprefixer": "^10.4.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^15.0.0"
+  }
+}

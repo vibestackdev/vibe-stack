@@ -1,0 +1,34 @@
+---
+description: Distinguishing between Server and Client Components
+globs: ["**/*.tsx", "**/*.jsx"]
+---
+
+# Server vs Client Components
+
+Decision Tree (ALWAYS follow this order):
+1. Can this component run as a Server Component? DEFAULT: YES
+2. Does it use: `useState`, `useEffect`, `useRef`, event handlers, or browser APIs?
+   → ONLY THEN add `'use client'`
+3. Push `'use client'` to the smallest possible LEAF component
+
+Optimization pattern:
+- Server Component: data fetching, layout, most of the tree
+- Client Component: only the interactive parts (button, form input, dropdown)
+
+❌ Anti-pattern (Avoid):
+```tsx
+'use client'  
+export default function ProductPage({ id }) {
+  // Uses server fetch — should be Server Component
+  const [product, setProduct] = useState(null)
+  useEffect(() => { fetch(`/api/products/${id}`).then(...) }, [])
+}
+```
+
+✅ Correct:
+```tsx
+// Server Component — no 'use client' needed for data fetching
+export default async function ProductPage({ id }) {
+  const product = await getProduct(id) 
+}
+```

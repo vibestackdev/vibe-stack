@@ -1,0 +1,138 @@
+{
+  "name": "Dev.to New Post → Social Media Cross-Post",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "id": "b1b2c3d4-1111-4000-8000-000000000001",
+      "name": "Check Every 6 Hours",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "url": "https://dev.to/api/articles/me/published",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "api-key",
+              "value": "YOUR_DEVTO_API_KEY"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "b1b2c3d4-2222-4000-8000-000000000002",
+      "name": "Fetch Dev.to Articles",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "dateTime": [
+            {
+              "value1": "={{ $json.published_at }}",
+              "operation": "after",
+              "value2": "={{ $now.minus({ hours: 6 }).toISO() }}"
+            }
+          ]
+        }
+      },
+      "id": "b1b2c3d4-3333-4000-8000-000000000003",
+      "name": "Filter New Posts Only",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [600, 300]
+    },
+    {
+      "parameters": {
+        "text": "🚀 New post: {{ $json.title }}\n\n{{ $json.description }}\n\nRead it here: {{ $json.url }}\n\n#webdev #ai #nextjs #cursor",
+        "options": {}
+      },
+      "id": "b1b2c3d4-4444-4000-8000-000000000004",
+      "name": "Format Tweet",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [800, 200]
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.text }}"
+      },
+      "id": "b1b2c3d4-5555-4000-8000-000000000005",
+      "name": "Post to X/Twitter",
+      "type": "n8n-nodes-base.twitter",
+      "typeVersion": 2,
+      "position": [1000, 200]
+    }
+  ],
+  "connections": {
+    "Check Every 6 Hours": {
+      "main": [
+        [
+          {
+            "node": "Fetch Dev.to Articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Dev.to Articles": {
+      "main": [
+        [
+          {
+            "node": "Filter New Posts Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter New Posts Only": {
+      "main": [
+        [
+          {
+            "node": "Format Tweet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Tweet": {
+      "main": [
+        [
+          {
+            "node": "Post to X/Twitter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
