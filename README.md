@@ -33,6 +33,9 @@ A **Next.js 15 + Supabase boilerplate** with **20 `.mdc` architecture rules** th
 | `testing.mdc` | Vitest + Playwright testing strategy |
 | `git-conventions.mdc` | Conventional commits + PR structure |
 | `ai-collaboration.mdc` | The 3-stage agentic loop (Plan → Implement → Verify) |
+| `file-naming.mdc` | File/directory naming conventions + import order |
+| `database-design.mdc` | Schema patterns, UUID keys, RLS templates |
+| `env-management.mdc` | Secret classification + NEXT_PUBLIC_ safety rules |
 
 ### 4 MCP Integrations (`.cursor/mcp.json`)
 
