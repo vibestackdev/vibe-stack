@@ -3,7 +3,7 @@ import Link from 'next/link'
 const features = [
   {
     icon: '🛡️',
-    title: '17 Architecture Rules',
+    title: '20 Architecture Rules',
     desc: 'Battle-tested .mdc rules that catch AI hallucinations before they hit production. Covers auth, params, RLS, Stripe, performance, and OWASP Top 10.',
   },
   {
@@ -34,7 +34,7 @@ const features = [
 ]
 
 const stats = [
-  { value: '17', label: 'Architecture Rules' },
+  { value: '20', label: 'Architecture Rules' },
   { value: '54', label: 'Production Files' },
   { value: '4', label: 'MCP Servers' },
   { value: '0', label: 'Hallucinations Shipped' },
@@ -117,7 +117,7 @@ export default function HomePage() {
             marginBottom: '2.5rem',
           }}
         >
-          17 architecture rules that physically prevent Cursor from generating
+          20 architecture rules that physically prevent Cursor from generating
           insecure auth, deprecated packages, and broken Next.js 15 patterns.
           Clone it. Open in Cursor. Ship production apps.
         </p>

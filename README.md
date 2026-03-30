@@ -2,7 +2,7 @@
 
 ### Stop fixing AI-generated bugs. Start shipping production apps.
 
-A **Next.js 15 + Supabase boilerplate** with **17 `.mdc` architecture rules** that physically prevent AI coding assistants from hallucinating insecure auth, deprecated packages, and broken patterns.
+A **Next.js 15 + Supabase boilerplate** with **20 `.mdc` architecture rules** that physically prevent AI coding assistants from hallucinating insecure auth, deprecated packages, and broken patterns.
 
 > **The problem:** AI models generate code that compiles perfectly but ships critical vulnerabilities — `getSession()` instead of `getUser()`, synchronous params that crash in Next.js 15, missing RLS policies that expose your database. These bugs are invisible until production.
 >
@@ -12,7 +12,7 @@ A **Next.js 15 + Supabase boilerplate** with **17 `.mdc` architecture rules** th
 
 ## 🏗️ What's Inside
 
-### 17 Architecture Rules (`.cursor/rules/`)
+### 20 Architecture Rules (`.cursor/rules/`)
 
 | Rule File | What It Prevents |
 |---|---|
@@ -107,7 +107,7 @@ Read [`docs/VIBE-CODING.md`](docs/VIBE-CODING.md) for the complete prompting fra
 
 | Feature | Vibe Stack | ShipFast ($169) | MakerKit ($299) |
 |---|:---:|:---:|:---:|
-| AI Architecture Rules | ✅ 17 rules | ❌ | ❌ |
+| AI Architecture Rules | ✅ 20 rules | ❌ | ❌ |
 | MCP Integrations | ✅ 4 servers | ❌ | ❌ |
 | n8n Automations | ✅ 3 workflows | ❌ | ❌ |
 | Next.js 15 + React 19 | ✅ | ✅ | ✅ |
@@ -127,7 +127,7 @@ This repo is the free foundation. The extended version includes the full boilerp
 
 | Tier | What You Get | Price |
 |---|---|---|
-| **Rules Pack** | All 17 .mdc rules + Vibe Coding guide | $29 |
+| **Rules Pack** | All 20 .mdc rules + Vibe Coding guide | $29 |
 | **Builder System** | Rules + 4 MCP configs + Architecture docs + SQL migrations | $69 |
 | **Complete Vault** | Everything + full boilerplate + Stripe + email + Masterclass | $149 |
 
