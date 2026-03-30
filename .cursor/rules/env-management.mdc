@@ -1,0 +1,66 @@
+---
+description: Environment variable management and secrets handling
+globs: ["**/*.ts", "**/*.tsx", "**/.env*"]
+alwaysApply: false
+---
+
+# Environment Variable Management
+
+## Classification Rules
+| Prefix | Visibility | Use For |
+|--------|-----------|---------|
+| `NEXT_PUBLIC_` | Client + Server | Non-sensitive public values (Supabase URL, Stripe publishable key) |
+| No prefix | Server Only | ALL secrets (API keys, webhook secrets, database URLs) |
+
+## NEVER Expose These to the Client
+```
+STRIPE_SECRET_KEY         → Server only (NEVER NEXT_PUBLIC_)
+STRIPE_WEBHOOK_SECRET     → Server only
+SUPABASE_SERVICE_ROLE_KEY → Server only (admin bypass key)
+RESEND_API_KEY            → Server only
+DATABASE_URL              → Server only
+```
+
+## Safe for Client
+```
+NEXT_PUBLIC_SUPABASE_URL           → Public Supabase endpoint
+NEXT_PUBLIC_SUPABASE_ANON_KEY      → Rate-limited client key (RLS protects data)
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY → Stripe public key (payment form only)
+NEXT_PUBLIC_APP_URL                → Your app's URL
+```
+
+## Validation Pattern
+Use `src/lib/env.ts` to validate at startup:
+```typescript
+function getEnvVar(key: string, required = true): string {
+  const value = process.env[key]
+  if (!value && required) {
+    throw new Error(`❌ Missing required env var: ${key}`)
+  }
+  return value ?? ''
+}
+```
+
+## .env.local Structure
+```bash
+# Supabase (required)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+
+# Stripe (optional in dev)
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+
+# Email (optional in dev)
+RESEND_API_KEY=re_...
+
+# App
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+## Anti-Patterns
+- NEVER commit `.env.local` — it's in `.gitignore`
+- NEVER use `process.env.X` directly in components — use the centralized `env` config
+- NEVER hardcode API keys or secrets in source code
+- NEVER use `NEXT_PUBLIC_` for write-access API keys

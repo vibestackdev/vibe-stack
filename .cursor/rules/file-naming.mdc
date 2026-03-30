@@ -1,0 +1,46 @@
+---
+description: File naming conventions and project organization rules
+globs: ["**/*.ts", "**/*.tsx"]
+alwaysApply: false
+---
+
+# File Naming & Organization
+
+## Naming Conventions
+- **Components:** PascalCase → `UserProfile.tsx`, `DashboardLayout.tsx`
+- **Utilities/Libs:** camelCase → `formatDate.ts`, `createClient.ts`
+- **Constants:** SCREAMING_SNAKE → `export const MAX_RETRIES = 3`
+- **Types files:** camelCase → `types/index.ts`, `types/database.ts`
+- **Server Actions:** camelCase in grouped files → `actions.ts` (not one file per action)
+- **Route Handlers:** always `route.ts` (Next.js convention)
+
+## Directory Rules
+- Components in `src/components/` — NEVER in `src/app/`
+- Page-specific components in `src/app/[route]/_components/` (underscore prefix = private)
+- Shared types in `src/types/` — NEVER define types inline in components
+- Business logic in `src/lib/` — NEVER put business logic in components
+- Server actions in the nearest `actions.ts` to where they're used
+
+## Import Order (enforce in every file)
+```typescript
+// 1. React/Next.js imports
+import { Suspense } from 'react'
+import Link from 'next/link'
+
+// 2. Third-party libraries
+import { z } from 'zod'
+
+// 3. Internal aliases (@/)
+import { Button } from '@/components/ui/button'
+import { createClient } from '@/lib/supabase/server'
+import type { UserProfile } from '@/types'
+
+// 4. Relative imports (only for co-located files)
+import { columns } from './columns'
+```
+
+## Anti-Patterns
+- NEVER create `utils/helpers.ts` catch-all files — name files by what they do
+- NEVER put more than 1 exported component per file
+- NEVER use default exports for utilities — use named exports
+- NEVER create `index.ts` barrel files that re-export everything (breaks tree-shaking)
