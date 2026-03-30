@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
 ## [1.0.0] - 2026-03-30
 
 ### Added
-- **20 `.mdc` Architecture Rules** — Battle-tested constraints for AI-assisted development
+- **22 `.mdc` Architecture Rules** — Battle-tested constraints for AI-assisted development
   - `supabase-auth-security.mdc` — Bans getSession(), enforces getUser()
   - `nextjs15-params.mdc` — Prevents synchronous params (Next.js 15 breaking change)
   - `supabase-ssr-only.mdc` — Blocks deprecated auth-helpers-nextjs
@@ -28,6 +28,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/).
   - `file-naming.mdc` — Naming conventions + import order
   - `database-design.mdc` — Schema patterns + RLS templates
   - `env-management.mdc` — Secret classification
+  - `hydration-safety.mdc` — Prevents hydration mismatches (Math.random, window, Date)
+  - `caching-revalidation.mdc` — Correct caching defaults + revalidatePath after mutations
 
 - **4 MCP Server Integrations** — GitHub, Filesystem, Supabase, Browser
 - **Complete Auth System** — Login, signup, email verification (PKCE), protected dashboard
