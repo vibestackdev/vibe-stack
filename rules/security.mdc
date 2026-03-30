@@ -1,0 +1,94 @@
+---
+description: Security rules and OWASP Top 10 enforcement for AI-generated code
+globs: ["**/*.ts", "**/*.tsx"]
+alwaysApply: false
+---
+
+# Security & OWASP Top 10
+
+CRITICAL: AI models will generate insecure code by default. These rules are non-negotiable.
+
+## 1. Injection Prevention (A03:2021)
+NEVER use string interpolation in database queries.
+```typescript
+// ❌ SQL INJECTION VULNERABILITY
+const { data } = await supabase.rpc('search', { query: `%${userInput}%` })
+
+// ✅ SAFE: Use parameterized queries
+const { data } = await supabase
+  .from('items')
+  .select()
+  .ilike('name', `%${userInput}%`)  // Supabase auto-escapes
+```
+
+## 2. XSS Prevention (A07:2021)
+```tsx
+// ❌ XSS VULNERABILITY — NEVER do this
+<div dangerouslySetInnerHTML={{ __html: userContent }} />
+
+// ✅ If you MUST render HTML, sanitize first
+import DOMPurify from 'isomorphic-dompurify'
+<div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(userContent) }} />
+```
+
+## 3. Authentication Boundary (A01:2021 - Broken Access Control)
+EVERY Server Action and Route Handler MUST verify auth before ANY data operation:
+```typescript
+export async function deleteItem(id: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  // ALSO verify ownership — don't just check auth
+  const { data: item } = await supabase
+    .from('items')
+    .select('user_id')
+    .eq('id', id)
+    .single()
+  
+  if (item?.user_id !== user.id) return { error: 'Forbidden' }
+
+  await supabase.from('items').delete().eq('id', id)
+}
+```
+
+## 4. Rate Limiting (A04:2021 - Insecure Design)
+Sensitive endpoints MUST be rate limited:
+```typescript
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
+
+const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(5, '60 s'), // 5 requests per minute
+})
+
+export async function POST(request: Request) {
+  const ip = request.headers.get('x-forwarded-for') ?? '127.0.0.1'
+  const { success } = await ratelimit.limit(ip)
+  if (!success) {
+    return Response.json({ error: 'Rate limited' }, { status: 429 })
+  }
+  // ... handle request
+}
+```
+
+## 5. Environment Variable Safety
+- API keys with write access: NEVER prefix with `NEXT_PUBLIC_`
+- Supabase `service_role` key: SERVER ONLY — never in client bundles
+- Stripe Secret Key: SERVER ONLY
+- Only `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are safe for the client
+
+## 6. Input Validation
+ALL user input MUST be validated with Zod before processing.
+See `typescript-strict.mdc` for the full Zod pattern.
+
+## 7. CORS
+API routes consumed cross-origin MUST set explicit allowed origins:
+```typescript
+const headers = {
+  'Access-Control-Allow-Origin': process.env.NEXT_PUBLIC_APP_URL!,
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+}
+```

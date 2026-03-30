@@ -1,0 +1,65 @@
+---
+description: Database schema design patterns for Supabase with proper types and relationships
+globs: ["**/*.sql", "**/supabase/**", "**/types/**"]
+alwaysApply: false
+---
+
+# Database Design Patterns
+
+## Table Naming
+- Use `snake_case` for tables and columns: `user_profiles`, `created_at`
+- NEVER use camelCase in SQL: `userId` → WRONG, `user_id` → CORRECT
+- Use plural table names: `profiles`, `posts`, `comments`
+
+## Required Columns (Every Table)
+```sql
+CREATE TABLE public.example (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  -- your columns here
+  created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+```
+ALWAYS include `id`, `created_at`, and `updated_at`.
+ALWAYS use UUID for primary keys (not serial/integer).
+ALWAYS use TIMESTAMPTZ (not TIMESTAMP) for timezone safety.
+
+## Foreign Key Pattern
+```sql
+-- Always reference auth.users for user ownership
+user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL
+```
+Use `ON DELETE CASCADE` for user-owned data.
+Use `ON DELETE SET NULL` for optional relationships.
+
+## RLS Template (Copy This Every Time)
+```sql
+ALTER TABLE public.example ENABLE ROW LEVEL SECURITY;
+
+-- Users can only see their own data
+CREATE POLICY "Users own data" ON public.example
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Or for public read + owner write:
+CREATE POLICY "Public read" ON public.example
+  FOR SELECT USING (true);
+CREATE POLICY "Owner write" ON public.example
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Owner update" ON public.example
+  FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Owner delete" ON public.example
+  FOR DELETE USING (auth.uid() = user_id);
+```
+
+## Type Generation
+After schema changes, regenerate types:
+```bash
+npx supabase gen types typescript --project-id YOUR_PROJECT_REF > src/types/database.ts
+```
+ALWAYS use generated types — NEVER manually type database schemas.
+
+## Anti-Patterns
+- NEVER use `TEXT` for fields that should be enums — use PostgreSQL enums or CHECK constraints
+- NEVER store JSON blobs when structured columns work — use `JSONB` only for truly dynamic data
+- NEVER create tables without RLS — see `supabase-rls.mdc`
+- NEVER use `SERIAL` for IDs — use `UUID` for security (prevents enumeration attacks)

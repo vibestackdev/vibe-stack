@@ -1,0 +1,49 @@
+---
+description: Stripe payment integration patterns — server-only, webhook handling
+globs: ["**/lib/stripe/**", "**/api/webhooks/**", "**/actions/**"]
+alwaysApply: false
+---
+
+# Stripe Integration Rules
+
+## RULE 1: Stripe is Server-Only
+NEVER import `stripe` in a Client Component or expose the secret key.
+All payment logic lives in Server Actions or Route Handlers.
+
+## RULE 2: Use Checkout Sessions, Not Custom Forms
+For subscriptions and one-time payments, always redirect to Stripe Checkout.
+NEVER build a custom credit card form — it creates PCI compliance liability.
+
+```typescript
+'use server'
+import { createCheckoutSession } from '@/lib/stripe'
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+
+export async function subscribe(priceId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const session = await createCheckoutSession({
+    userId: user.id,
+    userEmail: user.email!,
+    priceId,
+    successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?subscribed=true`,
+    cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/pricing`,
+  })
+
+  redirect(session.url!)
+}
+```
+
+## RULE 3: Webhook Signature Verification is Mandatory
+The `/api/webhooks/stripe` route MUST verify the `stripe-signature` header
+using `stripe.webhooks.constructEvent()`. Without this, attackers can send
+fake events to grant themselves free subscriptions.
+
+## RULE 4: Handle These Events at Minimum
+- `checkout.session.completed` — activate subscription
+- `customer.subscription.updated` — plan changes
+- `customer.subscription.deleted` — cancellations
+- `invoice.payment_failed` — mark as past_due

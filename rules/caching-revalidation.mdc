@@ -1,0 +1,55 @@
+---
+description: Next.js caching and revalidation best practices
+globs: ["**/app/**", "**/lib/**"]
+alwaysApply: false
+---
+
+# Caching & Revalidation
+
+## Default Behavior
+Next.js 15 has specific caching defaults. AI models often get these wrong.
+
+## Rules
+
+### Server Components - Data Fetching
+For dynamic data that changes frequently:
+```typescript
+// Force fresh data on every request
+const data = await fetch(url, { cache: 'no-store' })
+
+// Or revalidate every 60 seconds:
+const data = await fetch(url, { next: { revalidate: 60 } })
+```
+
+### Route Segment Config
+For pages that must always show fresh data:
+```typescript
+// At the top of page.tsx or layout.tsx:
+export const dynamic = 'force-dynamic'  // Never cache this page
+export const revalidate = 0             // Same as above
+```
+
+For static pages that rarely change:
+```typescript
+export const revalidate = 3600  // Revalidate every hour
+```
+
+### Server Actions — Always Revalidate
+After mutations, ALWAYS revalidate affected paths:
+```typescript
+'use server'
+import { revalidatePath } from 'next/cache'
+
+export async function createPost(formData: FormData) {
+  // ... create post in database
+  revalidatePath('/posts')  // ← NEVER forget this
+  revalidatePath('/dashboard')  // ← Revalidate all affected pages
+}
+```
+
+### Anti-Patterns
+- NEVER assume `fetch()` will always return fresh data — check your cache settings
+- NEVER forget `revalidatePath()` after a mutation in a Server Action
+- NEVER use `cache: 'force-cache'` for user-specific data
+- NEVER rely on client-side state to show "updated" data after a mutation — revalidate the server cache
+- ALWAYS use `revalidateTag()` for fine-grained cache invalidation when possible

@@ -1,0 +1,27 @@
+---
+description: Instructions for AI agent code generation workflow
+globs: ["*"]
+---
+
+# AI Collaboration Guidelines
+
+The 3-stage agentic loop:
+
+1. **PLAN:** 
+"Analyze the current codebase and plan how to implement [feature]. List the files you'll modify and why. Don't write code yet."
+
+2. **IMPLEMENT:** 
+"Implement the plan. Follow all `.cursor/rules/` guidelines. If you're unsure about auth or RLS, check `supabase-auth-security.mdc`."
+
+3. **REVIEW:** 
+"Review what you just generated. Check for:
+- `getSession()` usage (MUST be `getUser()`)
+- Missing error boundaries or `loading.tsx`
+- Next.js 15 async layout/page params
+- TypeScript `any` types (use `unknown` or define interface)
+Report any issues before I run it."
+
+Constraints:
+- NEVER give the AI a task longer than 200 words.
+- NEVER let the AI implement more than 3-4 files in one turn.
+- ALWAYS review the Git diff before committing.

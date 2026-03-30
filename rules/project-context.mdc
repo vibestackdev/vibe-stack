@@ -1,0 +1,50 @@
+---
+description: Core project context — tech stack, folder structure, and global conventions
+alwaysApply: true
+---
+
+# Vibe Stack — Project Context
+
+## Tech Stack
+- Framework: Next.js 15 (App Router) with React 19
+- Language: TypeScript (strict mode)
+- Styling: Tailwind CSS + shadcn/ui components
+- Database: Supabase (PostgreSQL + RLS)
+- Auth: Supabase SSR (cookie-based, @supabase/ssr)
+- Validation: Zod
+- Payments: Stripe (server-side only)
+- Email: Resend
+- Icons: lucide-react
+
+## Architecture Rules
+1. Default to Server Components. Only add 'use client' when the component needs interactivity.
+2. Push 'use client' to the smallest leaf component possible.
+3. All data fetching happens in Server Components or Server Actions.
+4. All mutations happen via Server Actions, never client-side fetch().
+5. All external input MUST be validated with Zod schemas.
+6. Never use getSession() on the server — always use getUser().
+7. All database tables MUST have Row Level Security (RLS) enabled.
+
+## Folder Structure
+```
+src/
+├── app/              # Next.js App Router pages & layouts
+│   ├── (auth)/       # Auth route group (login, signup)
+│   ├── dashboard/    # Protected pages (behind middleware)
+│   └── api/          # Route handlers (webhooks, public APIs)
+├── components/       # Reusable React components
+│   ├── ui/           # shadcn/ui primitives
+│   └── [feature]/    # Feature-specific components
+├── lib/              # Utilities & third-party configs
+│   ├── supabase/     # Supabase client factories  
+│   ├── stripe/       # Stripe helpers (server-only)
+│   └── utils.ts      # General utilities (cn helper)
+└── types/            # Shared TypeScript types
+```
+
+## Naming Conventions
+- Files: kebab-case (e.g., `user-profile.tsx`)
+- Components: PascalCase (e.g., `UserProfile`)
+- Server Actions: camelCase verbs (e.g., `createTodo`, `updateProfile`)
+- Types/Interfaces: PascalCase with `interface` preferred over `type`
+- Database tables: snake_case (e.g., `user_profiles`)

@@ -1,0 +1,28 @@
+---
+description: Git workflow and commit conventions for AI-assisted development
+globs: ["*"]
+---
+
+# Git Conventions for Vibe Coders
+
+Commit convention (Conventional Commits):
+- `feat:` add user authentication
+- `fix:` resolve RLS policy for shared projects  
+- `chore:` update dependencies
+- `docs:` add API documentation
+- `refactor:` extract auth helper to separate module
+
+Branch naming:
+- `feature/auth-flow`
+- `fix/rls-policy-bug`
+- `chore/update-dependencies`
+
+ALWAYS run before commit (if available):
+1. `npm run lint`
+2. `npm run type-check`
+3. `npm test`
+
+AI session workflow:
+- Create a new branch before starting any AI session
+- Review ALL AI-generated code before committing
+- Break large AI generations into multiple focused commits

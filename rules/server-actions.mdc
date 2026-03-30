@@ -1,0 +1,77 @@
+---
+description: Guidelines for Server Actions — validation, error handling, and when to use Route Handlers instead
+globs: ["**/actions.ts", "**/actions/**", "**/api/**"]
+alwaysApply: false
+---
+
+# Server Actions vs Route Handlers
+
+## When to Use Server Actions
+- Form submissions (POST with user data)
+- Mutations triggered from UI (create, update, delete)
+- Operations needing cookie/session access
+- Revalidation of cached pages after a mutation
+
+## RULE 1: Always Validate Inputs with Zod
+NEVER trust raw FormData. Always parse through a Zod schema first.
+
+✅ CORRECT:
+```typescript
+'use server'
+
+import { z } from 'zod'
+import { createClient } from '@/lib/supabase/server'
+import { revalidatePath } from 'next/cache'
+
+const createTodoSchema = z.object({
+  title: z.string().min(1).max(200),
+})
+
+export async function createTodo(formData: FormData) {
+  const parsed = createTodoSchema.safeParse({
+    title: formData.get('title'),
+  })
+
+  if (!parsed.success) {
+    return { error: 'Invalid input', details: parsed.error.flatten() }
+  }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  const { error } = await supabase
+    .from('todos')
+    .insert({ title: parsed.data.title, user_id: user.id })
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/todos')
+  return { success: true }
+}
+```
+
+## RULE 2: Return Structured Errors, Don't Throw
+Server Actions should return `{ error: string }` or `{ success: true }`.
+Only use `redirect()` for navigation after successful mutations.
+
+## When to Use Route Handlers (app/api/**)
+- Webhooks (Stripe, GitHub — external services calling your API)
+- Public API endpoints (no auth needed or API key auth)
+- File uploads/download streams
+- Third-party OAuth callbacks
+- CORS-required endpoints
+
+## RULE 3: Always Add try/catch in Route Handlers
+```typescript
+export async function POST(request: Request) {
+  try {
+    const body = await request.json()
+    // ... logic
+    return Response.json({ success: true })
+  } catch (error) {
+    console.error('API Error:', error)
+    return Response.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+```

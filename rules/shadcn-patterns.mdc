@@ -1,0 +1,77 @@
+---
+description: Shadcn/ui component usage patterns and anti-patterns
+globs: ["**/*.tsx", "**/components/**"]
+alwaysApply: false
+---
+
+# Shadcn/ui Patterns
+
+ALWAYS prefer shadcn/ui components over custom implementations.
+Import from `@/components/ui/` — NEVER from external package names.
+
+## Installation
+Components are NOT installed from npm. Use the CLI:
+```bash
+npx shadcn@latest add button card dialog input
+```
+This copies source code into `src/components/ui/`. You OWN these files.
+
+## Core Patterns
+
+### Forms: ALWAYS use react-hook-form + Zod
+```tsx
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+
+const schema = z.object({ email: z.string().email() })
+
+export function EmailForm() {
+  const form = useForm({ resolver: zodResolver(schema) })
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl><Input {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" disabled={form.formState.isSubmitting}>
+          {form.formState.isSubmitting ? 'Sending...' : 'Submit'}
+        </Button>
+      </form>
+    </Form>
+  )
+}
+```
+
+### Button Loading State
+```tsx
+<Button disabled={isPending}>
+  {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+  {isPending ? 'Saving...' : 'Save Changes'}
+</Button>
+```
+
+### Toast Notifications: Use Sonner
+```tsx
+import { toast } from 'sonner'
+toast.success('Profile updated')
+toast.error('Failed to save changes')
+```
+
+## Anti-Patterns — NEVER Do These
+- NEVER create a custom Modal when `<Dialog>` exists
+- NEVER create a custom Select when `<Select>` exists
+- NEVER create a custom Tooltip when `<Tooltip>` exists
+- NEVER use `alert()` or `window.confirm()` — use `<AlertDialog>`
+- NEVER wrap shadcn components in unnecessary divs for styling — use `cn()` and className instead

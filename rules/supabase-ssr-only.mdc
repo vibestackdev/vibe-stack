@@ -1,0 +1,26 @@
+---
+description: Supabase SSR package enforcement and cookie handling
+globs: ["**/utils/supabase/**", "**/app/**", "**/actions/**", "**/api/**"]
+---
+
+# Supabase SSR Package Rules
+
+You MUST use `@supabase/ssr` for all authentication.
+You MUST NEVER import from `@supabase/auth-helpers-nextjs`.
+
+The correct imports are:
+```typescript
+import { createServerClient } from '@supabase/ssr'        // Server components
+import { createBrowserClient } from '@supabase/ssr'       // Client components
+```
+
+The cookie handling MUST use ONLY `getAll()` and `setAll()` in middleware or server clients:
+```typescript
+cookies: {
+  getAll() { return cookieStore.getAll() },
+  setAll(cookiesToSet) {
+    cookiesToSet.forEach(({ name, value, options }) => 
+      cookieStore.set(name, value, options))
+  },
+}
+```

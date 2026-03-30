@@ -1,0 +1,35 @@
+---
+description: Testing strategy for AI developers
+globs: ["**/*.test.ts", "**/*.test.tsx", "**/tests/**"]
+---
+
+# Testing Strategy
+
+Use Vitest for unit tests, Playwright for E2E testing.
+
+What to test (prioritized):
+1. Server Actions (they're just functions — easy to test)
+2. API route handlers
+3. Auth flows (most critical)
+4. Complex business logic and utility functions
+
+What NOT to bother testing with unit tests:
+- Simple React leaf components (visual testing is better)
+- Styling logic and Tailwind classes
+- Component boilerplate
+
+Simple Server Action test example:
+```typescript
+import { createTodo } from '@/app/actions'
+import { expect, test, describe } from 'vitest'
+
+describe('createTodo Server Action', () => {
+  test('creates todo for authenticated user', async () => {
+    const formData = new FormData()
+    formData.set('title', 'Test todo')
+    
+    const result = await createTodo(formData)
+    expect(result.success).toBe(true)
+  })
+})
+```
