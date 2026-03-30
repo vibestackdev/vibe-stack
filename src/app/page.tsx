@@ -35,7 +35,7 @@ const features = [
 
 const stats = [
   { value: '20', label: 'Architecture Rules' },
-  { value: '54', label: 'Production Files' },
+  { value: '62', label: 'Production Files' },
   { value: '4', label: 'MCP Servers' },
   { value: '0', label: 'Hallucinations Shipped' },
 ]
