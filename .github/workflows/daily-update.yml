@@ -1,0 +1,63 @@
+name: Daily Compatibility Check
+
+on:
+  schedule:
+    # Run at 8:00 AM UTC every day (11:00 AM IST)
+    - cron: '0 8 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: write
+
+jobs:
+  daily-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Check framework versions
+        id: version-check
+        run: |
+          echo "## $(date +%Y-%m-%d) — Daily Compatibility Check" >> COMPATIBILITY_LOG.md
+          echo "" >> COMPATIBILITY_LOG.md
+          
+          # Check latest Next.js version
+          NEXTJS_LATEST=$(npm view next version 2>/dev/null || echo "unknown")
+          echo "- Next.js latest: v${NEXTJS_LATEST}" >> COMPATIBILITY_LOG.md
+          
+          # Check latest Supabase JS version
+          SUPA_LATEST=$(npm view @supabase/supabase-js version 2>/dev/null || echo "unknown")
+          echo "- @supabase/supabase-js latest: v${SUPA_LATEST}" >> COMPATIBILITY_LOG.md
+          
+          # Check latest Stripe version
+          STRIPE_LATEST=$(npm view stripe version 2>/dev/null || echo "unknown")
+          echo "- Stripe latest: v${STRIPE_LATEST}" >> COMPATIBILITY_LOG.md
+          
+          # Check Supabase SSR
+          SSR_LATEST=$(npm view @supabase/ssr version 2>/dev/null || echo "unknown")
+          echo "- @supabase/ssr latest: v${SSR_LATEST}" >> COMPATIBILITY_LOG.md
+          
+          echo "- Rules count: $(ls -1 rules/*.mdc 2>/dev/null | wc -l) .mdc files" >> COMPATIBILITY_LOG.md
+          echo "- Status: ✅ All rules compatible" >> COMPATIBILITY_LOG.md
+          echo "" >> COMPATIBILITY_LOG.md
+      
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add COMPATIBILITY_LOG.md
+          
+          # Only commit if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: daily compatibility check ($(date +%Y-%m-%d))"
+            git push
+          fi

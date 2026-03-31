@@ -1,0 +1,77 @@
+# Vibe Stack
+
+> The AI Builder's Complete System — 22 .mdc architecture rules for Cursor that prevent AI hallucinations in Next.js 15 + Supabase production applications.
+
+## Overview
+Vibe Stack is a battle-tested Next.js 15 + Supabase boilerplate with 22 `.mdc` architecture rule files that physically constrain AI coding assistants (Cursor, Claude, GPT) from generating insecure, deprecated, or broken code patterns. It includes 4 pre-configured MCP (Model Context Protocol) server integrations and 3 n8n automation workflows.
+
+## Problem Solved
+AI models generate code that compiles perfectly but contains critical vulnerabilities:
+- Using `getSession()` instead of `getUser()` (JWT not verified — sessions can be forged)
+- Accessing `params` synchronously in Next.js 15 (works in dev, crashes in production)
+- Importing deprecated `@supabase/auth-helpers-nextjs` instead of `@supabase/ssr`
+- Missing Row Level Security on Supabase tables (data publicly readable)
+- Exposing Stripe secret keys in `NEXT_PUBLIC_` environment variables
+
+## How It Works
+Each `.mdc` rule file contains YAML frontmatter that tells Cursor when to activate (based on file globs). When active, the AI is constrained to generate only the correct, secure pattern. Rules include explicit ✅ correct and ❌ incorrect code examples.
+
+## Architecture Rules (22 files)
+- supabase-auth-security.mdc — Bans getSession(), enforces getUser()
+- nextjs15-params.mdc — Prevents synchronous params access
+- supabase-ssr-only.mdc — Blocks deprecated auth-helpers imports
+- security.mdc — OWASP Top 10 with rate limiting
+- stripe-payments.mdc — Server-only Stripe, signature verification
+- typescript-strict.mdc — Bans `any`, enforces Zod validation
+- performance.mdc — Parallel fetching, N+1 prevention
+- server-vs-client-components.mdc — Prevents 'use client' overuse
+- server-actions.mdc — Zod validation + structured errors
+- error-handling.mdc — Error boundaries and loading states
+- supabase-rls.mdc — Row Level Security enforcement
+- database-design.mdc — Schema patterns, UUID keys, RLS templates
+- env-management.mdc — Secret classification + NEXT_PUBLIC_ safety
+- hydration-safety.mdc — Prevents hydration mismatches
+- caching-revalidation.mdc — Correct caching + revalidatePath
+- shadcn-patterns.mdc — Form patterns with react-hook-form + Zod
+- api-design.mdc — Route Handler patterns with auth
+- testing.mdc — Vitest + Playwright strategy
+- git-conventions.mdc — Conventional commits
+- ai-collaboration.mdc — 3-stage agentic loop
+- file-naming.mdc — Naming conventions + import order
+- project-context.mdc — Global architecture context
+
+## MCP Integrations (4 servers)
+- GitHub MCP — AI reads PRs, commits, and issues
+- Supabase MCP — AI inspects database schema and RLS policies
+- Filesystem MCP — AI navigates project structure
+- Browser MCP — AI takes screenshots and tests running app
+
+## Technology Stack
+- Next.js 15 (App Router)
+- React 19
+- Supabase (Auth, Database, RLS)
+- Stripe (Subscriptions, Webhooks)
+- Resend (Transactional email)
+- TypeScript (strict mode)
+- Zod (runtime validation)
+- shadcn/ui (component library)
+- Tailwind CSS
+- n8n (workflow automation)
+
+## Use Cases
+- Solo developers building production SaaS applications with AI assistance
+- Teams adopting AI-assisted development workflows with security guardrails
+- Developers migrating from Next.js 14 to 15 with AI help
+- No-code founders using Cursor to generate their first codebase
+- Agencies needing consistent architecture across AI-generated projects
+
+## Pricing
+- Free: Open-source GitHub repository with all 22 rules
+- Rules Pack ($29): All rules + Vibe Coding guide
+- Builder System ($69): Rules + MCP configs + Architecture docs
+- Complete Vault ($149): Full boilerplate + Stripe + email + Masterclass
+
+## Links
+- GitHub: https://github.com/vibestackdev/vibe-stack
+- Product: https://vibestackdev.gumroad.com/l/vibe-stack
+- Author: VibeStack (https://github.com/vibestackdev)
