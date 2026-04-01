@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Vibe Stack — AI-Powered Next.js Boilerplate',
     description:
-      'Ship production apps in hours, not months. 15 battle-tested AI rules prevent hallucinations.',
+      'Ship production apps in hours, not months. 22 battle-tested AI architecture rules prevent hallucinations.',
     type: 'website',
   },
 }
