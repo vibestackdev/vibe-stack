@@ -1,0 +1,84 @@
+---
+description: Prevent common React 19 and Next.js 15 migration pitfalls
+globs: ["**/*.tsx", "**/*.ts"]
+alwaysApply: false
+---
+
+# React 19 / Next.js 15 Migration Traps
+
+## RULE 1: useFormStatus Must Be Inside <form>
+
+`useFormStatus()` only works when the component using it is a CHILD of a `<form>` 
+element that uses a Server Action. It does NOT work if used in the same component
+that renders the form.
+
+```tsx
+// ❌ WRONG — useFormStatus returns { pending: false } always
+'use client'
+export function MyForm() {
+  const { pending } = useFormStatus() // Always false here
+  return (
+    <form action={createItem}>
+      <Button disabled={pending}>Submit</Button>
+    </form>
+  )
+}
+
+// ✅ CORRECT — extract the submit button to a child component
+'use client'
+import { useFormStatus } from 'react-dom'
+
+function SubmitButton() {
+  const { pending } = useFormStatus()
+  return <Button disabled={pending}>{pending ? 'Saving...' : 'Submit'}</Button>
+}
+
+export function MyForm() {
+  return (
+    <form action={createItem}>
+      <SubmitButton />
+    </form>
+  )
+}
+```
+
+## RULE 2: useActionState Replaces useFormState
+
+`useFormState` is DEPRECATED in React 19. Use `useActionState` instead.
+
+```typescript
+// ❌ DEPRECATED
+import { useFormState } from 'react-dom'
+
+// ✅ CORRECT — React 19
+import { useActionState } from 'react'
+
+const [state, formAction, isPending] = useActionState(serverAction, initialState)
+```
+
+## RULE 3: ref Is a Regular Prop in React 19
+
+`forwardRef()` is no longer required. `ref` is passed as a regular prop.
+
+```tsx
+// ❌ DEPRECATED — verbose, unnecessary in React 19
+const MyInput = forwardRef<HTMLInputElement, InputProps>((props, ref) => {
+  return <input ref={ref} {...props} />
+})
+
+// ✅ CORRECT — React 19
+function MyInput({ ref, ...props }: InputProps & { ref?: React.Ref<HTMLInputElement> }) {
+  return <input ref={ref} {...props} />
+}
+```
+
+## RULE 4: use() Hook for Promises and Context
+
+React 19 `use()` can unwrap Promises in render. Use it instead of useEffect for 
+data fetching in client components.
+
+```tsx
+// ✅ React 19 — use() for context (replaces useContext)
+import { use } from 'react'
+const theme = use(ThemeContext)
+```

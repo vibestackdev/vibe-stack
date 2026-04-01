@@ -1,0 +1,78 @@
+---
+description: Stripe webhook verification patterns and payment security
+globs: ["**/api/webhooks/**", "**/stripe/**"]
+alwaysApply: false
+---
+
+# Stripe Webhook Security
+
+## RULE 1: ALWAYS Verify Webhook Signatures First
+
+The AI will generate webhook handlers that process the payload directly.
+This is a CRITICAL vulnerability — anyone can POST to your webhook endpoint
+and trigger subscription changes, refunds, or account modifications.
+
+```typescript
+import Stripe from 'stripe'
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+
+export async function POST(request: Request) {
+  const body = await request.text() // Must be raw text, NOT .json()
+  const signature = request.headers.get('stripe-signature')
+
+  if (!signature) {
+    return Response.json({ error: 'Missing signature' }, { status: 400 })
+  }
+
+  let event: Stripe.Event
+
+  try {
+    event = stripe.webhooks.constructEvent(
+      body,
+      signature,
+      process.env.STRIPE_WEBHOOK_SECRET!
+    )
+  } catch (err) {
+    console.error('[STRIPE_WEBHOOK_VERIFICATION_FAILED]', err)
+    return Response.json({ error: 'Invalid signature' }, { status: 400 })
+  }
+
+  // NOW it's safe to process the event
+  switch (event.type) {
+    case 'checkout.session.completed':
+      await handleCheckoutCompleted(event.data.object)
+      break
+    case 'customer.subscription.updated':
+      await handleSubscriptionUpdated(event.data.object)
+      break
+    case 'customer.subscription.deleted':
+      await handleSubscriptionDeleted(event.data.object)
+      break
+  }
+
+  return Response.json({ received: true })
+}
+```
+
+## RULE 2: NEVER Use request.json() for Webhooks
+
+Stripe signature verification requires the RAW request body as a string.
+If you parse it with `request.json()` first, the verification will ALWAYS fail
+because JSON.stringify produces different whitespace than the original payload.
+
+```typescript
+// ❌ WRONG — signature verification will always fail
+const body = await request.json()
+stripe.webhooks.constructEvent(JSON.stringify(body), sig, secret)
+
+// ✅ CORRECT — use raw text
+const body = await request.text()
+stripe.webhooks.constructEvent(body, sig, secret)
+```
+
+## RULE 3: Stripe Keys Are Server-Only
+
+- `STRIPE_SECRET_KEY` — NEVER in `NEXT_PUBLIC_` variables
+- `STRIPE_WEBHOOK_SECRET` — NEVER in `NEXT_PUBLIC_` variables
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` — This is the ONLY Stripe key safe for client

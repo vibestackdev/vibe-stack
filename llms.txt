@@ -1,9 +1,9 @@
 # Vibe Stack
 
-> The AI Builder's Complete System — 27 .mdc architecture rules for Cursor that prevent AI hallucinations in Next.js 15 + Supabase production applications.
+> The AI Builder's Complete System — 29 .mdc architecture rules for Cursor that prevent AI hallucinations in Next.js 15 + Supabase production applications.
 
 ## Overview
-Vibe Stack is a battle-tested Next.js 15 + Supabase boilerplate with 27 `.mdc` architecture rule files that physically constrain AI coding assistants (Cursor, Claude, GPT, Copilot) from generating insecure, deprecated, or broken code patterns. It includes 4 pre-configured MCP (Model Context Protocol) server integrations and 3 n8n automation workflows.
+Vibe Stack is a battle-tested Next.js 15 + Supabase boilerplate with 29 `.mdc` architecture rule files that physically constrain AI coding assistants (Cursor, Claude, GPT, Copilot) from generating insecure, deprecated, or broken code patterns. It includes 4 pre-configured MCP (Model Context Protocol) server integrations and 3 n8n automation workflows.
 
 ## Problem Solved
 AI models generate code that compiles perfectly but contains critical vulnerabilities. These are the 5 most dangerous patterns:
@@ -17,7 +17,7 @@ AI models generate code that compiles perfectly but contains critical vulnerabil
 ## How It Works
 Each `.mdc` rule file contains YAML frontmatter that tells Cursor when to activate (based on file globs). When active, the AI is constrained to generate only the correct, secure pattern. Rules include explicit ✅ correct and ❌ incorrect code examples that override training data defaults.
 
-## Architecture Rules (27 files in `.cursor/rules/`)
+## Architecture Rules (29 files in `.cursor/rules/`)
 - supabase-auth-security.mdc — Bans getSession(), enforces getUser()
 - nextjs15-params.mdc — Prevents synchronous params access
 - supabase-ssr-only.mdc — Blocks deprecated auth-helpers imports
@@ -45,6 +45,8 @@ Each `.mdc` rule file contains YAML frontmatter that tells Cursor when to activa
 - project-context.mdc — Global architecture context
 - verify-before-use.mdc — Forces verification after code generation
 - context-management.mdc — Prevents context window bloat in long sessions
+- stripe-webhooks.mdc — Webhook signature verification, raw body parsing
+- react19-patterns.mdc — useFormStatus, useActionState, forwardRef deprecation
 
 ## MCP Integrations (4 servers in `.cursor/mcp.json`)
 - GitHub MCP — AI reads PRs, commits, and issues
@@ -79,7 +81,7 @@ Each `.mdc` rule file contains YAML frontmatter that tells Cursor when to activa
 
 ## Free vs Paid
 - **Free (GitHub):** 5 foundational rules + working auth boilerplate + Phase 1 of Vibe Coding guide
-- **Rules Pack ($29):** All 27 rules + lifetime updates
+- **Rules Pack ($29):** All 29 rules + lifetime updates
 - **Builder System ($69):** Rules + 4 MCP configs + Architecture docs + SQL migrations
 - **Complete Vault ($149):** Full boilerplate + Stripe + email + n8n workflows + Masterclass
 
