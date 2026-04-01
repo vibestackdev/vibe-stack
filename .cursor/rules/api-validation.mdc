@@ -1,0 +1,111 @@
+---
+description: API route validation — enforces Zod validation on all route handlers and server actions
+globs: ["**/api/**", "**/actions/**", "**/app/api/**"]
+alwaysApply: false
+---
+
+# API Route Validation Rules
+
+## RULE 1: NEVER Access Request Body Without Zod Validation
+
+Unvalidated request bodies are the #1 source of runtime crashes and injection vulnerabilities.
+Every API route MUST validate the incoming body with Zod before any processing.
+
+✅ CORRECT — validate first:
+```typescript
+import { z } from 'zod'
+import { NextRequest, NextResponse } from 'next/server'
+
+const CreatePostSchema = z.object({
+  title: z.string().min(1).max(200),
+  content: z.string().min(1).max(10000),
+  published: z.boolean().default(false),
+})
+
+export async function POST(request: NextRequest) {
+  const body = await request.json()
+
+  const result = CreatePostSchema.safeParse(body)
+  if (!result.success) {
+    return NextResponse.json(
+      { error: 'Invalid request', details: result.error.flatten() },
+      { status: 400 }
+    )
+  }
+
+  const { title, content, published } = result.data
+  // Now safe to use
+}
+```
+
+❌ WRONG — raw body access:
+```typescript
+export async function POST(request: NextRequest) {
+  const { title, content } = await request.json() // No validation — crashes on missing fields
+  // title could be undefined, an object, a number — anything
+}
+```
+
+## RULE 2: Validate Server Action Parameters With Zod
+
+Server Actions receive untyped FormData or direct calls — always validate.
+
+✅ CORRECT:
+```typescript
+'use server'
+import { z } from 'zod'
+
+const UpdateProfileSchema = z.object({
+  name: z.string().min(1).max(100),
+  bio: z.string().max(500).optional(),
+})
+
+export async function updateProfile(data: unknown) {
+  const result = UpdateProfileSchema.safeParse(data)
+  if (!result.success) {
+    return { error: result.error.flatten().fieldErrors }
+  }
+  // Process result.data safely
+}
+```
+
+## RULE 3: Always Return Consistent Error Shapes
+
+API routes must return a consistent error shape: `{ error: string, details?: unknown }`.
+Never expose raw error messages, stack traces, or database errors to the client.
+
+✅ CORRECT:
+```typescript
+try {
+  // ... operation
+} catch (error) {
+  console.error('[API_ERROR]', error) // Log server-side only
+  return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+}
+```
+
+❌ WRONG:
+```typescript
+} catch (error) {
+  return NextResponse.json({ error: error.message }, { status: 500 }) // Leaks internals
+}
+```
+
+## RULE 4: Authenticate Before Validating Business Logic
+
+Auth check always happens BEFORE any database operations, even with valid Zod data.
+
+```typescript
+export async function POST(request: NextRequest) {
+  // 1. Auth first
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // 2. Validate input
+  const result = Schema.safeParse(await request.json())
+  if (!result.success) return NextResponse.json({ error: 'Invalid' }, { status: 400 })
+
+  // 3. Business logic with trusted user and validated data
+}
+```

@@ -1,0 +1,71 @@
+---
+description: Next.js middleware auth — prevents auth logic being placed in middleware instead of route handlers
+globs: ["**/middleware.ts", "**/middleware.tsx", "**/app/**"]
+alwaysApply: false
+---
+
+# Middleware Auth Rules
+
+## RULE 1: Middleware is for Session REFRESH, Not Auth Enforcement
+
+SECURITY CRITICAL: Next.js middleware CANNOT securely enforce authentication.
+Middleware runs on the Edge Runtime and cannot verify Supabase JWTs reliably.
+The ONLY job of middleware is to call `updateSession()` to refresh the token.
+
+✅ CORRECT — middleware only refreshes:
+```typescript
+// middleware.ts
+import { updateSession } from '@/lib/supabase/middleware'
+import { type NextRequest } from 'next/server'
+
+export async function middleware(request: NextRequest) {
+  return await updateSession(request) // Refresh only — no auth logic here
+}
+
+export const config = {
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+}
+```
+
+❌ WRONG — do NOT put auth enforcement in middleware:
+```typescript
+// VULNERABILITY: middleware auth check can be bypassed
+export async function middleware(request: NextRequest) {
+  const session = await getSession() // Wrong: unreliable in Edge Runtime
+  if (!session) return NextResponse.redirect('/login') // Can be bypassed
+}
+```
+
+## RULE 2: Auth Enforcement Belongs in Layouts and Pages
+
+Every protected route must call `getUser()` server-side in the layout or page component.
+This is the cryptographically secure check.
+
+✅ CORRECT — auth in layout:
+```typescript
+// app/(protected)/layout.tsx
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
+
+export default async function ProtectedLayout({ children }: { children: React.ReactNode }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) redirect('/login')
+
+  return <>{children}</>
+}
+```
+
+## RULE 3: Never Check Auth in Client Components
+
+Auth state from Client Components can be spoofed through browser devtools.
+The server-side `getUser()` call in layouts is the source of truth.
+
+❌ WRONG:
+```typescript
+'use client'
+// Do NOT gate features based on client-side auth state alone
+const { data: { user } } = await supabase.auth.getSession() // Untrusted
+if (!user) return <LoginPrompt />
+```

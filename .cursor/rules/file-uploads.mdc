@@ -1,0 +1,97 @@
+---
+description: Image and file upload patterns — prevents insecure client-side uploads and missing file validation
+globs: ["**/api/upload/**", "**/actions/**", "**/components/**upload**", "**/app/**upload**"]
+alwaysApply: false
+---
+
+# File Upload Security Rules
+
+## RULE 1: NEVER Upload Directly From Client to Supabase Storage With the Anon Key
+
+Client-side uploads with the anon key allow users to upload to any bucket path.
+Always generate a signed upload URL server-side, scoped to the authenticated user.
+
+✅ CORRECT — server generates signed URL:
+```typescript
+// Server Action
+'use server'
+import { createClient } from '@/lib/supabase/server'
+
+export async function getUploadUrl(filename: string, contentType: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Unauthorized')
+
+  // Scope the path to the user's ID — prevents path traversal
+  const path = `${user.id}/${Date.now()}-${filename}`
+
+  const { data, error } = await supabase.storage
+    .from('uploads')
+    .createSignedUploadUrl(path)
+
+  if (error) throw error
+  return { signedUrl: data.signedUrl, path }
+}
+```
+
+❌ WRONG — direct client upload with anon key:
+```typescript
+// Client Component -- exposes storage to manipulation
+const { data, error } = await supabase.storage
+  .from('uploads')
+  .upload(`${filename}`, file) // No user scoping — any path writable
+```
+
+## RULE 2: Validate File Type and Size Server-Side
+
+Client-side validation is bypassed trivially. Always re-validate on the server.
+
+✅ CORRECT:
+```typescript
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+const MAX_SIZE_BYTES = 5 * 1024 * 1024 // 5MB
+
+export async function POST(request: NextRequest) {
+  const formData = await request.formData()
+  const file = formData.get('file') as File
+
+  if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+  if (!ALLOWED_TYPES.includes(file.type)) {
+    return NextResponse.json({ error: 'Invalid file type' }, { status: 400 })
+  }
+  if (file.size > MAX_SIZE_BYTES) {
+    return NextResponse.json({ error: 'File too large' }, { status: 400 })
+  }
+  // Safe to process
+}
+```
+
+## RULE 3: Always Scope Storage Paths to User ID
+
+Storage paths must always be prefixed with the authenticated user's ID.
+This prevents users from reading or overwriting other users' files.
+
+```typescript
+// Pattern: userId/timestamp-originalFilename
+const storagePath = `${user.id}/${Date.now()}-${sanitizedFilename}`
+
+// RLS policy on the bucket should enforce: auth.uid()::text = (storage.foldername(name))[1]
+```
+
+## RULE 4: Use Next.js Image Component for Supabase Storage URLs
+
+Never use raw `<img>` tags with Supabase storage URLs. Configure Next.js image domains
+and use `<Image>` for automatic optimization and lazy loading.
+
+```typescript
+// next.config.js
+images: {
+  remotePatterns: [
+    {
+      protocol: 'https',
+      hostname: '*.supabase.co',
+      pathname: '/storage/v1/object/public/**',
+    },
+  ],
+},
+```
