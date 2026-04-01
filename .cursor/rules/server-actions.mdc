@@ -12,66 +12,101 @@ alwaysApply: false
 - Operations needing cookie/session access
 - Revalidation of cached pages after a mutation
 
-## RULE 1: Always Validate Inputs with Zod
-NEVER trust raw FormData. Always parse through a Zod schema first.
+## When to Use Route Handlers (app/api/**)
+- Webhooks (Stripe, GitHub — external services calling your API)
+- Public API endpoints (no auth needed or API key auth)
+- File upload/download streams
+- Third-party OAuth callbacks
+- CORS-required endpoints
 
-✅ CORRECT:
+## RULE 1: Always Use Typed ActionResponse
+
+Every Server Action MUST return `ActionResponse<T>` — never throw, never leak internals.
+
 ```typescript
 'use server'
-
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
-const createTodoSchema = z.object({
-  title: z.string().min(1).max(200),
+type ActionResponse<T = void> =
+  | { success: true; data: T }
+  | { success: false; error: string }
+
+const CreateTodoSchema = z.object({
+  title: z.string().min(1, 'Title required').max(200),
 })
 
-export async function createTodo(formData: FormData) {
-  const parsed = createTodoSchema.safeParse({
-    title: formData.get('title'),
-  })
-
-  if (!parsed.success) {
-    return { error: 'Invalid input', details: parsed.error.flatten() }
-  }
-
+export async function createTodo(
+  formData: FormData
+): Promise<ActionResponse<{ id: string }>> {
+  // 1. Auth first
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'Unauthorized' }
+  if (!user) return { success: false, error: 'Unauthorized' }
 
-  const { error } = await supabase
+  // 2. Validate
+  const parsed = CreateTodoSchema.safeParse({ title: formData.get('title') })
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0].message }
+  }
+
+  // 3. Execute
+  const { data, error } = await supabase
     .from('todos')
     .insert({ title: parsed.data.title, user_id: user.id })
+    .select('id')
+    .single()
 
-  if (error) return { error: error.message }
+  if (error) {
+    console.error('[CREATE_TODO_ERROR]', error) // Server-side only
+    return { success: false, error: 'Failed to create todo' } // Generic to client
+  }
 
   revalidatePath('/todos')
-  return { success: true }
+  return { success: true, data: { id: data.id } }
 }
 ```
 
-## RULE 2: Return Structured Errors, Don't Throw
-Server Actions should return `{ error: string }` or `{ success: true }`.
-Only use `redirect()` for navigation after successful mutations.
+## RULE 2: Never Export Non-Action Values from 'use server' Files
 
-## When to Use Route Handlers (app/api/**)
-- Webhooks (Stripe, GitHub — external services calling your API)
-- Public API endpoints (no auth needed or API key auth)
-- File uploads/download streams
-- Third-party OAuth callbacks
-- CORS-required endpoints
+Files with `'use server'` export ONLY async functions.
+Never export constants, types, or synchronous functions from these files.
 
-## RULE 3: Always Add try/catch in Route Handlers
+❌ WRONG:
+```typescript
+'use server'
+export const MAX_TODOS = 100 // Becomes a server action — causes infinite loops
+```
+
+✅ CORRECT — types in a separate file:
+```typescript
+// src/types/actions.ts (NOT a server action file)
+export type ActionResponse<T = void> =
+  | { success: true; data: T }
+  | { success: false; error: string }
+```
+
+## RULE 3: Always try/catch in Route Handlers
+
 ```typescript
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    // ... logic
     return Response.json({ success: true })
   } catch (error) {
-    console.error('API Error:', error)
+    console.error('[API_ERROR]', error)
     return Response.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+```
+
+## RULE 4: revalidatePath After Every Mutation
+
+After any successful database write, call `revalidatePath()` on the affected route.
+Without this, the UI shows stale cached data until the next full page reload.
+
+```typescript
+revalidatePath('/dashboard/posts') // The list page
+revalidatePath(`/posts/${postId}`) // The individual item page if public
 ```
