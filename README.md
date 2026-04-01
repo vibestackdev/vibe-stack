@@ -2,7 +2,7 @@
 
 ### Stop fixing AI-generated bugs. Start shipping production apps.
 
-A **Next.js 15 + Supabase boilerplate** with **25 `.mdc` architecture rules** that physically prevent AI coding assistants from hallucinating insecure auth, deprecated packages, and broken patterns.
+A **Next.js 15 + Supabase boilerplate** with **27 `.mdc` architecture rules** that physically prevent AI coding assistants from hallucinating insecure auth, deprecated packages, and broken patterns.
 
 [![Next.js 15](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
 [![React 19](https://img.shields.io/badge/React-19-blue?logo=react)](https://react.dev/)
@@ -63,7 +63,7 @@ The free rules are the foundation. The **AI Builder's Complete System** is the e
 
 **For developers who already have a project** and want to stop fixing AI hallucinations.
 
-- ✅ All **25 battle-tested `.mdc` rules** (20 more than the free tier):
+- ✅ All **27 battle-tested `.mdc` rules** (20 more than the free tier):
   - `security.mdc` — OWASP Top 10 with rate limiting examples
   - `stripe-payments.mdc` — Server-only Stripe, webhook signature verification
   - `typescript-strict.mdc` — Bans `any`, enforces Zod at every boundary
@@ -135,7 +135,7 @@ src/
 
 | Feature | Vibe Stack (Free) | Vibe Stack ($149) | ShipFast ($169) | MakerKit ($299) |
 |---|:---:|:---:|:---:|:---:|
-| AI Architecture Rules | 5 rules | **25 rules** | ❌ | ❌ |
+| AI Architecture Rules | 5 rules | **27 rules** | ❌ | ❌ |
 | MCP Integrations | ❌ | ✅ 4 servers | ❌ | ❌ |
 | n8n Automations | ❌ | ✅ 3 workflows | ❌ | ❌ |
 | AGENTS.md | ✅ | ✅ | ❌ | ❌ |

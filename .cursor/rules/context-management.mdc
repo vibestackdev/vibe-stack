@@ -1,0 +1,61 @@
+---
+description: Context window management — prevents AI from losing track during long sessions
+globs: ["*"]
+alwaysApply: false
+---
+
+# Context Management Rules
+
+## RULE 1: Break Large Tasks Into Sub-Tasks
+
+If a feature requires changes to more than 4 files, break it into sequential sub-tasks.
+Complete and verify each sub-task before starting the next.
+
+Example — "Add a blog feature with CRUD":
+1. Sub-task 1: Database migration + RLS policies
+2. Sub-task 2: Server Actions (create, read, update, delete)
+3. Sub-task 3: UI components (list, detail, form)
+4. Sub-task 4: Route handlers + API endpoints
+5. Sub-task 5: Integration testing
+
+## RULE 2: Summarize Before Continuing
+
+If the conversation has been going for more than 5 turns, summarize
+what has been done and what remains before generating more code.
+
+Template:
+```
+Before continuing, let me summarize:
+✅ Completed: [list of completed items]
+🔄 In progress: [current item]
+📋 Remaining: [list of remaining items]
+```
+
+## RULE 3: Reference Files By Full Path
+
+When discussing code, ALWAYS use the full path relative to the project root.
+This prevents confusion between similarly named files.
+
+✅ CORRECT: "Update `src/app/dashboard/page.tsx`"
+❌ WRONG: "Update the dashboard page"
+
+✅ CORRECT: "Import from `@/lib/supabase/server`"
+❌ WRONG: "Import the Supabase client"
+
+## RULE 4: One Concern Per Message
+
+Each AI message should address ONE concern clearly:
+- ONE file modification with before/after
+- ONE bug fix with explanation
+- ONE new feature with complete implementation
+
+Do NOT mix unrelated changes in a single response. This makes
+review harder and increases the chance of introducing bugs.
+
+## RULE 5: Keep Rule Files Under 150 Lines
+
+Individual `.mdc` rule files should stay under 150 lines.
+If a rule file grows beyond that, split it into focused sub-rules.
+
+This mirrors the principle from production AI harnesses:
+keep the index lightweight, put details in separate files.

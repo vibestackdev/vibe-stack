@@ -1,42 +1,135 @@
 ---
-description: Error boundaries and loading states guidelines
+description: Error boundaries, loading states, and server error handling
 globs: ["**/app/**"]
 ---
 
 # Error Handling and Loading States
 
-EVERY page in `app/` router MUST have sibling files if it does data fetching:
-- `loading.tsx` (Suspense boundary)
+## RULE 1: Every Data-Fetching Page Needs Sibling Files
+
+EVERY page in `app/` router that does data fetching MUST have:
+- `loading.tsx` (Suspense boundary — shown during streaming)
 - `error.tsx` (Error boundary — must be `'use client'`)
 
 `loading.tsx` template:
 ```tsx
 export default function Loading() {
-  return <div className="animate-pulse">Loading...</div>
+  return (
+    <div className="flex items-center justify-center min-h-[200px]">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+    </div>
+  )
 }
 ```
 
 `error.tsx` template:
 ```tsx
 'use client'
-export default function Error({ error, reset }: { error: Error; reset: () => void }) {
+
+export default function Error({ 
+  error, 
+  reset 
+}: { 
+  error: Error & { digest?: string }
+  reset: () => void 
+}) {
   return (
-    <div>
-      <h2>Something went wrong</h2>
-      <button onClick={reset}>Try again</button>
+    <div className="flex flex-col items-center justify-center min-h-[200px] gap-4">
+      <h2 className="text-xl font-semibold">Something went wrong</h2>
+      <p className="text-muted-foreground">An unexpected error occurred.</p>
+      <button 
+        onClick={reset}
+        className="px-4 py-2 bg-primary text-primary-foreground rounded-md"
+      >
+        Try again
+      </button>
     </div>
   )
 }
 ```
 
-Server Action error pattern:
+## RULE 2: NEVER Expose Internal Errors to Clients
+
+Server errors, database errors, and stack traces MUST stay server-side.
+Return generic messages to the client. Log the real error.
+
+✅ CORRECT:
 ```typescript
-export async function createItem(formData: FormData) {
-  try {
-    // ... operation
-    return { success: true }
-  } catch (error) {
-    return { error: 'Failed to create item' }
-  }
+try {
+  const { data, error } = await supabase.from('posts').select()
+  if (error) throw error
+  return data
+} catch (error) {
+  console.error('[POSTS_FETCH_ERROR]', error) // Detailed log server-side
+  return NextResponse.json(
+    { error: 'Failed to fetch posts' }, // Generic message to client
+    { status: 500 }
+  )
 }
 ```
+
+❌ WRONG:
+```typescript
+} catch (error) {
+  return NextResponse.json(
+    { error: error.message }, // Leaks: "relation 'posts' does not exist"
+    { status: 500 }
+  )
+}
+```
+
+## RULE 3: Use ActionResponse for All Server Actions
+
+Every Server Action MUST return a typed response — never throw.
+
+```typescript
+type ActionResponse<T = void> = 
+  | { success: true; data: T }
+  | { success: false; error: string }
+
+// Usage:
+export async function createPost(input: unknown): Promise<ActionResponse<Post>> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { success: false, error: 'Unauthorized' }
+
+  const parsed = PostSchema.safeParse(input)
+  if (!parsed.success) return { success: false, error: 'Invalid input' }
+
+  const { data, error } = await supabase
+    .from('posts')
+    .insert({ ...parsed.data, user_id: user.id })
+    .select()
+    .single()
+
+  if (error) {
+    console.error('[CREATE_POST_ERROR]', error)
+    return { success: false, error: 'Failed to create post' }
+  }
+
+  revalidatePath('/dashboard')
+  return { success: true, data }
+}
+```
+
+## RULE 4: Handle Supabase Errors Explicitly
+
+NEVER ignore the `error` field from Supabase queries.
+
+✅ CORRECT:
+```typescript
+const { data, error } = await supabase.from('posts').select()
+if (error) {
+  console.error('[SUPABASE_ERROR]', error.message, error.code)
+  throw new Error('Database query failed')
+}
+// data is now safely typed as non-null
+```
+
+❌ WRONG:
+```typescript
+const { data } = await supabase.from('posts').select()
+// data could be null if query failed — using it causes runtime crash
+return data.map(post => post.title) // TypeError: Cannot read property 'map' of null
+```
+

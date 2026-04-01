@@ -1,0 +1,70 @@
+---
+description: Verification rules — forces the AI to verify its work before declaring done
+globs: ["*"]
+alwaysApply: true
+---
+
+# Verify Before Use
+
+## RULE 1: Run Type Checker After Every Code Generation
+
+After generating or modifying TypeScript files, ALWAYS run the type checker
+before declaring the task complete. Do not assume code is correct — verify it.
+
+```bash
+npx tsc --noEmit
+```
+
+If types fail, fix ALL errors before moving on. Do NOT leave type errors
+for the developer to fix manually.
+
+## RULE 2: Re-Read Before Modifying
+
+Before modifying ANY existing file, re-read it first. Do NOT generate code
+based on assumptions about what the file contains.
+
+Common failures from skipping this step:
+- Importing functions that were renamed or deleted
+- Overwriting changes made in a previous turn
+- Adding duplicate imports or declarations
+- Breaking existing patterns by not matching the file's style
+
+## RULE 3: Verify Database Schema Before Queries
+
+Before writing Supabase queries, verify the table structure by checking
+the migration files in `supabase/migrations/`.
+
+Do NOT assume column names, types, or relationships. Common hallucinations:
+- Using `user_id` when the column is `author_id`
+- Assuming a `status` column exists when it doesn't
+- Using wrong relationship names in `.select('*, profile(*)')`
+
+## RULE 4: Test Route Patterns Before Declaring Done
+
+After creating new API routes or pages, verify:
+1. The file path matches the expected URL pattern
+2. The HTTP method matches the use case (GET for reads, POST for mutations)
+3. The response shape matches what the client expects
+
+```
+app/api/posts/route.ts        → GET /api/posts, POST /api/posts
+app/api/posts/[id]/route.ts   → GET /api/posts/123, DELETE /api/posts/123
+app/dashboard/page.tsx         → /dashboard
+app/posts/[slug]/page.tsx      → /posts/my-first-post
+```
+
+## RULE 5: Verify Environment Variables Exist
+
+Before using `process.env.SOME_KEY`, verify it exists in `.env.example`.
+If the variable is new, ADD it to `.env.example` with a placeholder value
+and document it in the setup instructions.
+
+NEVER put secrets in `NEXT_PUBLIC_` variables — they are exposed to the browser.
+
+```typescript
+// CORRECT — server-only secret
+const stripeKey = process.env.STRIPE_SECRET_KEY!
+
+// WRONG — exposed to all users
+const stripeKey = process.env.NEXT_PUBLIC_STRIPE_SECRET_KEY!
+```
