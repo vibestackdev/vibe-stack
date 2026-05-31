@@ -529,3 +529,12 @@
 - Rules count: 22 .mdc files
 - Status: ✅ All rules compatible
 
+## 2026-05-31 — Daily Compatibility Check
+
+- Next.js latest: v16.2.6
+- @supabase/supabase-js latest: v2.106.2
+- Stripe latest: v22.2.0
+- @supabase/ssr latest: v0.10.3
+- Rules count: 22 .mdc files
+- Status: ✅ All rules compatible
+
