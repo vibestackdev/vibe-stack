@@ -156,6 +156,7 @@ src/
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | 8 Architecture Decision Records — explains every "why" |
 | [MCP-SETUP.md](docs/MCP-SETUP.md) | Step-by-step MCP server setup guide |
 | [AGENTS.md](AGENTS.md) | AI coding agent instructions for this project |
+| [Upstream Spec Contracts](https://myspec.dev?utm_source=github&utm_medium=referral&utm_campaign=vibestack) | Collaborative web-based PRD authoring and architecture baselines for vibe coding |
 
 ---
 
