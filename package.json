@@ -8,7 +8,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "viberaven:gate": "npx -y viberaven --agent-mode",
+    "viberaven:verify": "npx -y viberaven --verify",
+    "viberaven:strict": "npx -y viberaven --strict"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.0",
